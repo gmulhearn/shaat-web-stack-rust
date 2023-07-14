@@ -1,5 +1,6 @@
 use actix_web::{
     get,
+    http::header::LOCATION,
     web::{self, Data, ReqData},
     HttpResponse, Responder,
 };
@@ -18,22 +19,46 @@ async fn hello_page(name: web::Path<String>) -> impl Responder {
     HelloTemplate { name: &name }.to_response()
 }
 
-#[derive(Template)]
+#[derive(Template, Default)]
 #[template(path = "register.html")]
-struct RegisterTemplate;
+struct RegisterTemplate {
+    error: Option<String>,
+}
+
+pub async fn show_register_page(error: Option<&str>) -> HttpResponse {
+    RegisterTemplate {
+        error: error.map(String::from),
+    }
+    .to_response()
+}
 
 #[get("/register")]
 async fn register_page() -> impl Responder {
-    RegisterTemplate.to_response()
+    show_register_page(None).await
 }
 
 #[derive(Template)]
 #[template(path = "login.html")]
-struct LoginTemplate;
+struct LoginTemplate {
+    error: Option<String>,
+}
+
+pub async fn show_login_page(error: Option<&str>) -> HttpResponse {
+    LoginTemplate {
+        error: error.map(String::from),
+    }
+    .to_response()
+}
 
 #[get("/login")]
 async fn login_page() -> impl Responder {
-    LoginTemplate.to_response()
+    show_login_page(None).await
+}
+
+#[derive(Template)]
+#[template(path = "profile.html")]
+struct ProfileTemplate<'a> {
+    username: &'a str,
 }
 
 #[get("/profile")]
@@ -46,10 +71,15 @@ async fn profile(state: Data<AppState>, req_user: Option<ReqData<TokenClaims>>) 
 
     let users = state.users.lock().unwrap();
 
-    let user = users.iter().find(|user| user.id == user_id).unwrap();
+    let user = users.iter().find(|user| user.id == user_id);
 
-    HelloTemplate {
-        name: &user.username,
+    match user {
+        Some(user) => ProfileTemplate {
+            username: &user.username,
+        }
+        .to_response(),
+        None => HttpResponse::TemporaryRedirect()
+            .append_header((LOCATION, "/login"))
+            .body(""),
     }
-    .to_response()
 }

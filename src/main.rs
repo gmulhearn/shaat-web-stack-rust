@@ -102,8 +102,7 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/home")
                     .wrap(session_middleware)
-                    // .service(create_article)
-                    .service(profile), // .service(hello_page),
+                    .service(profile),
             )
     })
     .bind(("127.0.0.1", 3000))?

@@ -1,16 +1,13 @@
-use crate::{AppState, AuthUser, TokenClaims};
+use crate::{
+    pages::{show_login_page, show_register_page},
+    AppState, AuthUser, TokenClaims,
+};
 use actix_web::{cookie::Cookie, http::header::LOCATION, post, web, HttpResponse, Responder};
 use argonautica::{Hasher, Verifier};
 use hmac::{Hmac, Mac};
 use jwt::SignWithKey;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use sha2::Sha256;
-
-#[derive(Serialize)]
-struct UserNoPassword {
-    id: i32,
-    username: String,
-}
 
 #[derive(Deserialize, Debug)]
 pub struct RegisterFormData {
@@ -23,8 +20,6 @@ pub async fn register_submit(
     web::Form(form): web::Form<RegisterFormData>,
     state: web::Data<AppState>,
 ) -> impl Responder {
-    dbg!(&form);
-    dbg!(&state);
     let hash_secret = std::env::var("HASH_SECRET").expect("HASH_SECRET must be set!");
     let mut hasher = Hasher::default();
     let hash = hasher
@@ -32,7 +27,13 @@ pub async fn register_submit(
         .with_secret_key(hash_secret)
         .hash()
         .unwrap();
+
     let mut users = state.users.lock().unwrap();
+
+    if users.iter().any(|user| user.username == form.username) {
+        return show_register_page(Some("User already exists")).await;
+    }
+
     let id = users.len() as i32;
     users.push(AuthUser {
         id,
@@ -87,9 +88,9 @@ pub async fn login_submit(
                     )
                     .body("")
             } else {
-                HttpResponse::Unauthorized().json("Incorrect username or password")
+                show_login_page(Some("Incorrect username or password")).await
             }
         }
-        None => HttpResponse::InternalServerError().body("user not found"),
+        None => show_login_page(Some("Incorrect username or password")).await,
     }
 }
