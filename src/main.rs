@@ -1,12 +1,12 @@
 pub mod askama_to_actix_responder;
 pub mod services;
 
-use std::sync::{Mutex, RwLock};
+use std::sync::Mutex;
 
 use actix_files::Files;
 use actix_web_httpauth::{
     extractors::{
-        bearer::{self, BearerAuth},
+        bearer::{self},
         AuthenticationError,
     },
     middleware::HttpAuthentication,
@@ -64,13 +64,25 @@ pub struct TokenClaims {
     id: i32,
 }
 
-async fn validator(
+async fn cookie_session_middleware(
     req: ServiceRequest,
-    credentials: BearerAuth,
+    _srv: web::Data<AppState>,
 ) -> Result<ServiceRequest, (Error, ServiceRequest)> {
+    // TODO - wtf does this config mean
+    let config = req
+        .app_data::<bearer::Config>()
+        .cloned()
+        .unwrap_or_default()
+        .scope("/home");
+
+    let token_cookie = match req.cookie("tokey") {
+        Some(cookie) => cookie,
+        None => return Err((AuthenticationError::from(config).into(), req)),
+    };
+
     let jwt_secret: String = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set!");
     let key: Hmac<Sha256> = Hmac::new_from_slice(jwt_secret.as_bytes()).unwrap();
-    let token_string = credentials.token();
+    let token_string = token_cookie.value();
 
     let claims: Result<TokenClaims, &str> = token_string
         .verify_with_key(&key)
@@ -81,15 +93,7 @@ async fn validator(
             req.extensions_mut().insert(value);
             Ok(req)
         }
-        Err(_) => {
-            let config = req
-                .app_data::<bearer::Config>()
-                .cloned()
-                .unwrap_or_default()
-                .scope("");
-
-            Err((AuthenticationError::from(config).into(), req))
-        }
+        Err(_) => Err((AuthenticationError::from(config).into(), req)),
     }
 }
 
@@ -100,18 +104,22 @@ async fn main() -> std::io::Result<()> {
     let app_state = web::Data::new(AppState::default());
 
     HttpServer::new(move || {
-        let bearer_middleware = HttpAuthentication::bearer(validator);
+        let session_middleware = HttpAuthentication::with_fn(cookie_session_middleware);
+
         App::new()
             .app_data(app_state.clone())
-            .service(basic_auth)
-            .service(create_user)
-            .service(
-                web::scope("")
-                    .wrap(bearer_middleware)
-                    .service(create_article),
-            )
+            // TODO - figure out how to correctly order conflicting services with and without auth middleware
             .service(Files::new("/static", "./static"))
+            .service(basic_auth)
+            // .service(basic_auth2)
+            .service(create_user)
             .service(hello)
+            .service(
+                web::scope("/home")
+                    .wrap(session_middleware)
+                    .service(create_article)
+                    .service(hello),
+            )
     })
     .bind(("127.0.0.1", 3000))?
     .run()
