@@ -1,4 +1,5 @@
 pub mod askama_to_actix_responder;
+use actix_files::Files;
 pub use askama_to_actix_responder::*;
 
 use actix_web::{get, web, App, HttpServer, Responder};
@@ -7,7 +8,8 @@ use askama::Template;
 #[derive(Template)] // this will generate the code...
 #[template(path = "hello.html")] // using the template in this path, relative
                                  // to the `templates` dir in the crate root
-struct HelloTemplate<'a> { // the name of the struct can be anything
+struct HelloTemplate<'a> {
+    // the name of the struct can be anything
     name: &'a str, // the field name should match the variable name
                    // in your template
 }
@@ -25,8 +27,13 @@ async fn hello(name: web::Path<String>) -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| App::new().service(index).service(hello))
-        .bind(("127.0.0.1", 3000))?
-        .run()
-        .await
+    HttpServer::new(|| {
+        App::new()
+            .service(index)
+            .service(hello)
+            .service(Files::new("/static", "./static"))
+    })
+    .bind(("127.0.0.1", 3000))?
+    .run()
+    .await
 }

@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "render": "tailwindcss -i tailwind-input.css -o static/style.css",
+    "dev": "tailwindcss -i tailwind-input.css -o static/style.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.3.3"
+  }
+}
