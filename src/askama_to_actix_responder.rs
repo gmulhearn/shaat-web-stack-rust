@@ -1,8 +1,11 @@
 use std::fmt;
 
-use actix_web::{ResponseError, HttpResponse, body::BoxBody, HttpResponseBuilder, http::{StatusCode, header::HeaderValue}};
+use actix_web::{
+    body::BoxBody,
+    http::{header::HeaderValue, StatusCode},
+    HttpResponse, HttpResponseBuilder, ResponseError,
+};
 use askama::Error;
-
 
 /// Newtype to let askama::Error implement actix_web::ResponseError.
 struct ActixError(Error);

@@ -1,4 +1,5 @@
 pub mod askama_to_actix_responder;
+pub mod pages;
 pub mod services;
 
 use std::sync::Mutex;
@@ -13,38 +14,23 @@ use actix_web_httpauth::{
 };
 pub use askama_to_actix_responder::*;
 
-use actix_web::{dev::ServiceRequest, get, web, App, Error, HttpMessage, HttpServer, Responder};
-use askama::Template;
+use actix_web::{dev::ServiceRequest, web, App, Error, HttpMessage, HttpServer};
 use chrono::NaiveDateTime;
 use hmac::{Hmac, Mac};
 use jwt::VerifyWithKey;
+use pages::{login_page, profile, register_page};
 use serde::{Deserialize, Serialize};
-use services::{basic_auth, create_article, create_user};
+use services::{login_submit, register_submit};
 use sha2::Sha256;
 
-#[derive(Template)] // this will generate the code...
-#[template(path = "hello.html")] // using the template in this path, relative
-                                 // to the `templates` dir in the crate root
-struct HelloTemplate<'a> {
-    // the name of the struct can be anything
-    name: &'a str, // the field name should match the variable name
-                   // in your template
-}
-
-#[get("/{name}")]
-async fn hello(name: web::Path<String>) -> impl Responder {
-    // format!("Hello {}!", &name)
-    HelloTemplate { name: &name }.to_response()
-}
-
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct AuthUser {
     pub id: i32,
     pub username: String,
     pub password: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct Article {
     pub id: i32,
     pub title: String,
@@ -53,10 +39,9 @@ struct Article {
     pub published_on: Option<NaiveDateTime>,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct AppState {
     users: Mutex<Vec<AuthUser>>,
-    articles: Mutex<Vec<Article>>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -110,15 +95,15 @@ async fn main() -> std::io::Result<()> {
             .app_data(app_state.clone())
             // TODO - figure out how to correctly order conflicting services with and without auth middleware
             .service(Files::new("/static", "./static"))
-            .service(basic_auth)
-            // .service(basic_auth2)
-            .service(create_user)
-            .service(hello)
+            .service(register_page)
+            .service(register_submit)
+            .service(login_page)
+            .service(login_submit)
             .service(
                 web::scope("/home")
                     .wrap(session_middleware)
-                    .service(create_article)
-                    .service(hello),
+                    // .service(create_article)
+                    .service(profile), // .service(hello_page),
             )
     })
     .bind(("127.0.0.1", 3000))?
