@@ -11,13 +11,13 @@ use super::{
 };
 
 pub struct InMemoryUserRepository {
-    users: Mutex<HashMap<String, UserEntity>>,
+    users_by_id: Mutex<HashMap<String, UserEntity>>,
 }
 
 impl InMemoryUserRepository {
     pub fn new() -> Self {
         Self {
-            users: Default::default(),
+            users_by_id: Default::default(),
         }
     }
 }
@@ -25,13 +25,13 @@ impl InMemoryUserRepository {
 #[async_trait]
 impl UserRepository for InMemoryUserRepository {
     async fn get_user_by_id(&self, id: &str) -> RepositoryResult<Option<UserEntity>> {
-        let users = self.users.lock().await;
+        let users = self.users_by_id.lock().await;
         let user = users.get(id).cloned();
         Ok(user)
     }
 
     async fn get_user_by_username(&self, username: &str) -> RepositoryResult<Option<UserEntity>> {
-        let users = self.users.lock().await;
+        let users = self.users_by_id.lock().await;
         let user = users
             .iter()
             .find_map(|(_, user)| (user.username == username).then(|| user.clone()));
@@ -47,7 +47,7 @@ impl UserRepository for InMemoryUserRepository {
             pw_hash: pw_hash.to_owned(),
         };
 
-        let mut users = self.users.lock().await;
+        let mut users = self.users_by_id.lock().await;
         users.insert(id.clone(), entity);
 
         Ok(id)

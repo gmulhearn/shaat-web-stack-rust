@@ -135,12 +135,28 @@
 
         <header class="bg-white shadow">
             <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                <h1 class="text-3xl font-bold tracking-tight text-gray-900">Dashboard</h1>
+                <h1 class="text-3xl font-bold tracking-tight text-gray-900">Todo List</h1>
             </div>
         </header>
         <main>
-            <div class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
-                <!-- Your content -->
+            <div class="mx-auto max-w-2xl py-6 sm:px-6 lg:px-8">
+                <form action="/home/todos" method="post">
+                    <input
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        id="name" name="name" type="text" placeholder="Todo name">
+                    <button
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 my-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                        type="submit">
+                        Create
+                    </button>
+                </form>
+                <div class="mt-4 max-w-xl mx-auto">
+                    {% for todo in todos %}
+                    <div class="shadow border rounded w-full p-2">
+                        <p>{{ todo.name|e }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
         </main>
     </div>

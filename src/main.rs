@@ -10,32 +10,39 @@ use actix_files::Files;
 
 use middleware::jwt_session::JwtSession;
 use repositories::{
+    in_memory_todo_repository::InMemoryTodoRepository,
     in_memory_user_repository::InMemoryUserRepository, user_repository::UserRepository,
 };
-use services::{auth_service::AuthService, db_auth_service::DbAuthService};
+use services::{
+    auth_service::AuthService, db_auth_service::DbAuthService, todo_service::TodoService,
+};
 pub use utils::askama_to_actix_responder::*;
 
 use actix_web::{web, App, HttpServer};
 use pages::{
     index::index_redirect,
     login::{login_page, login_submit},
-    profile::profile_page,
     register::{register_page, register_submit},
+    todos::{create_todo_submit, todos_page},
 };
 use serde::{Deserialize, Serialize};
 
 pub struct AppState {
     auth_service: Box<dyn AuthService>,
     user_repository: Arc<dyn UserRepository>,
+    todo_service: TodoService,
 }
 
 impl Default for AppState {
     fn default() -> Self {
         let user_repo = Arc::new(InMemoryUserRepository::new()) as Arc<dyn UserRepository>;
         let auth_service = DbAuthService::new(Arc::clone(&user_repo).into());
+        let todo_repo = Box::new(InMemoryTodoRepository::new());
+        let todo_service = TodoService::new(todo_repo);
         Self {
             auth_service: Box::new(auth_service),
             user_repository: user_repo,
+            todo_service,
         }
     }
 }
@@ -62,7 +69,12 @@ async fn main() -> std::io::Result<()> {
             .service(register_submit)
             .service(login_page)
             .service(login_submit)
-            .service(web::scope("/home").wrap(JwtSession).service(profile_page))
+            .service(
+                web::scope("/home")
+                    .wrap(JwtSession)
+                    .service(todos_page)
+                    .service(create_todo_submit),
+            )
     })
     .bind(("127.0.0.1", 3000))?
     .run()

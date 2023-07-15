@@ -53,7 +53,7 @@ pub async fn login_submit(
     };
 
     HttpResponse::Found()
-        .append_header((LOCATION, format!("/home/profile")))
+        .append_header((LOCATION, format!("/home/todos")))
         .cookie(
             Cookie::build(JWT_AUTH_COOKIE_NAME, access_token)
                 .http_only(true)
