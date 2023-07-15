@@ -1,8 +1,9 @@
-pub mod askama_to_actix_responder;
 pub mod pages;
+pub mod repositories;
 pub mod services;
+pub mod utils;
 
-use std::sync::Mutex;
+use std::sync::Arc;
 
 use actix_files::Files;
 use actix_web_httpauth::{
@@ -12,41 +13,44 @@ use actix_web_httpauth::{
     },
     middleware::HttpAuthentication,
 };
-pub use askama_to_actix_responder::*;
+use repositories::{
+    in_memory_user_repository::InMemoryUserRepository, user_repository::UserRepository,
+};
+use services::{auth_service::AuthService, db_auth_service::DbAuthService};
+pub use utils::askama_to_actix_responder::*;
 
 use actix_web::{dev::ServiceRequest, web, App, Error, HttpMessage, HttpServer};
-use chrono::NaiveDateTime;
 use hmac::{Hmac, Mac};
 use jwt::VerifyWithKey;
-use pages::{login_page, profile, register_page};
+use pages::{
+    index::index_redirect,
+    login::{login_page, login_submit},
+    profile::profile_page,
+    register::{register_page, register_submit},
+};
 use serde::{Deserialize, Serialize};
-use services::{login_submit, register_submit};
 use sha2::Sha256;
 
-#[derive(Serialize, Debug)]
-struct AuthUser {
-    pub id: i32,
-    pub username: String,
-    pub password: String,
-}
-
-#[derive(Serialize, Debug)]
-struct Article {
-    pub id: i32,
-    pub title: String,
-    pub content: String,
-    pub published_by: i32,
-    pub published_on: Option<NaiveDateTime>,
-}
-
-#[derive(Default, Debug)]
 pub struct AppState {
-    users: Mutex<Vec<AuthUser>>,
+    auth_service: Box<dyn AuthService>,
+    user_repository: Arc<dyn UserRepository>,
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        let user_repo = Arc::new(InMemoryUserRepository::new()) as Arc<dyn UserRepository>;
+        let auth_service = DbAuthService::new(Arc::clone(&user_repo).into());
+        Self {
+            auth_service: Box::new(auth_service),
+            user_repository: user_repo,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct TokenClaims {
-    id: i32,
+    id: String,
+    // TODO - issued, expiry, etc
 }
 
 async fn cookie_session_middleware(
@@ -95,6 +99,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(app_state.clone())
             // TODO - figure out how to correctly order conflicting services with and without auth middleware
             .service(Files::new("/static", "./static"))
+            .service(index_redirect)
             .service(register_page)
             .service(register_submit)
             .service(login_page)
@@ -102,7 +107,7 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/home")
                     .wrap(session_middleware)
-                    .service(profile),
+                    .service(profile_page),
             )
     })
     .bind(("127.0.0.1", 3000))?
