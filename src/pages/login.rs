@@ -2,7 +2,10 @@ use actix_web::{cookie::Cookie, get, http::header::LOCATION, post, web, HttpResp
 use askama::Template;
 use serde::Deserialize;
 
-use crate::{services::auth_service::AuthServiceError, AppState, TemplateToResponse};
+use crate::{
+    services::auth_service::AuthServiceError, utils::global_auth::JWT_AUTH_COOKIE_NAME, AppState,
+    TemplateToResponse,
+};
 
 #[derive(Template)]
 #[template(path = "login.html")]
@@ -52,7 +55,7 @@ pub async fn login_submit(
     HttpResponse::Found()
         .append_header((LOCATION, format!("/home/profile")))
         .cookie(
-            Cookie::build("tokey", access_token)
+            Cookie::build(JWT_AUTH_COOKIE_NAME, access_token)
                 .http_only(true)
                 .finish(),
         )

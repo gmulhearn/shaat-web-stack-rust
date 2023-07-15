@@ -22,11 +22,12 @@ use actix_web::{
     Error, HttpMessage, HttpResponse,
 };
 use futures_util::future::LocalBoxFuture;
-use hmac::{Hmac, Mac};
 use jwt::VerifyWithKey;
-use sha2::Sha256;
 
-use crate::{AppState, TokenClaims};
+use crate::{
+    utils::global_auth::{get_jwt_signing_key, JWT_AUTH_COOKIE_NAME},
+    AppState, TokenClaims,
+};
 
 // There are two steps in middleware processing.
 // 1. Middleware initialization, middleware factory gets called with
@@ -76,16 +77,14 @@ where
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let service = self.service.clone();
         Box::pin(async move {
-            let token_cookie = match req.cookie("tokey") {
+            let token_cookie = match req.cookie(JWT_AUTH_COOKIE_NAME) {
                 Some(token) => token,
                 None => return redirect_to_login_middleware_response(req),
             };
+            let jwt_token = token_cookie.value();
 
-            let jwt_secret: String = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set!");
-            let key: Hmac<Sha256> = Hmac::new_from_slice(jwt_secret.as_bytes()).unwrap();
-            let token_string = token_cookie.value();
-
-            let claims = match VerifyWithKey::<TokenClaims>::verify_with_key(token_string, &key) {
+            let key = get_jwt_signing_key();
+            let claims = match VerifyWithKey::<TokenClaims>::verify_with_key(jwt_token, &key) {
                 Ok(claims) => claims,
                 Err(_) => return redirect_to_login_middleware_response(req),
             };

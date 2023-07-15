@@ -2,11 +2,13 @@ use std::sync::Arc;
 
 use argonautica::{Hasher, Verifier};
 use async_trait::async_trait;
-use hmac::{Hmac, Mac};
 use jwt::SignWithKey;
-use sha2::Sha256;
 
-use crate::{repositories::user_repository::UserRepository, TokenClaims};
+use crate::{
+    repositories::user_repository::UserRepository,
+    utils::global_auth::{get_jwt_signing_key, get_password_hash_secret},
+    TokenClaims,
+};
 
 use super::auth_service::{AuthService, AuthServiceError, AuthServiceResult};
 
@@ -34,7 +36,7 @@ impl AuthService for DbAuthService {
             return Err(AuthServiceError::UserAlreadyExists);
         }
 
-        let hash_secret = std::env::var("HASH_SECRET").expect("HASH_SECRET must be set!");
+        let hash_secret = get_password_hash_secret();
         let mut hasher = Hasher::default();
         let hash = hasher
             .with_password(password)
@@ -51,13 +53,6 @@ impl AuthService for DbAuthService {
     }
 
     async fn authenticate_user(&self, username: &str, password: &str) -> AuthServiceResult<String> {
-        let jwt_secret: Hmac<Sha256> = Hmac::new_from_slice(
-            std::env::var("JWT_SECRET")
-                .expect("JWT_SECRET must be set!")
-                .as_bytes(),
-        )
-        .unwrap();
-
         let user = self
             .user_repository
             .get_user_by_username(username)
@@ -65,7 +60,7 @@ impl AuthService for DbAuthService {
             .unwrap()
             .ok_or(AuthServiceError::UserDoesNotExists)?;
 
-        let hash_secret = std::env::var("HASH_SECRET").expect("HASH_SECRET must be set!");
+        let hash_secret = get_password_hash_secret();
         let mut verifier = Verifier::default();
         let is_valid = verifier
             .with_hash(user.pw_hash)
@@ -79,6 +74,7 @@ impl AuthService for DbAuthService {
         }
 
         let claims = TokenClaims { id: user.id };
+        let jwt_secret = get_jwt_signing_key();
         let access_token = claims.sign_with_key(&jwt_secret).unwrap();
 
         Ok(access_token)
