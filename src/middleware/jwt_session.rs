@@ -89,7 +89,9 @@ where
                 Err(_) => return redirect_to_login_middleware_response(req),
             };
 
-            let app_state = req.app_data::<Data<AppState>>().unwrap();
+            let app_state = req
+                .app_data::<Data<AppState>>()
+                .expect("Fatal: could not access app data");
             let user = app_state
                 .user_repository
                 .get_user_by_id(&claims.id)
