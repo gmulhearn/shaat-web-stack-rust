@@ -23,3 +23,11 @@ sha2 = "0.10.7"
 thiserror = "1.0.43"
 tokio = "1.29.1"
 uuid = { version = "1.4.0", features = ["v4"] }
+sqlx = { version = "0.7", features = [
+    "postgres",
+    "runtime-tokio",
+    "tls-native-tls",
+] }
+
+[profile.dev.package.sqlx-macros]
+opt-level = 3
