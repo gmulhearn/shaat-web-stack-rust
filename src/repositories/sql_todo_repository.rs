@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use sqlx::{FromRow, Pool, Postgres};
+use sqlx::{Pool, Postgres};
 
 use crate::utils::random_id;
 
@@ -18,7 +18,7 @@ impl SqlTodoRepository {
     }
 }
 
-#[derive(Debug, FromRow)]
+#[derive(Debug)]
 struct TodoRow {
     pub id: String,
     #[allow(unused)]
