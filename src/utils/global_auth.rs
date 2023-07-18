@@ -2,6 +2,7 @@ use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
 pub const JWT_AUTH_COOKIE_NAME: &str = "JWT";
+pub const JWT_AUTH_EXPIRATION_MINS: i64 = 10;
 
 pub fn get_jwt_signing_key() -> Hmac<Sha256> {
     let jwt_secret: String = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set!");

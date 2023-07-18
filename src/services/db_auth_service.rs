@@ -7,7 +7,7 @@ use jwt::SignWithKey;
 
 use crate::{
     repositories::user_repository::UserRepository,
-    utils::global_auth::{get_jwt_signing_key, get_password_hash_secret},
+    utils::global_auth::{get_jwt_signing_key, get_password_hash_secret, JWT_AUTH_EXPIRATION_MINS},
     TokenClaims,
 };
 
@@ -76,7 +76,7 @@ impl AuthService for DbAuthService {
 
         let issued = Utc::now();
         let expiration = Utc::now()
-            .checked_add_signed(chrono::Duration::minutes(1))
+            .checked_add_signed(chrono::Duration::minutes(JWT_AUTH_EXPIRATION_MINS))
             .expect("valid timestamp");
 
         let claims = TokenClaims {
