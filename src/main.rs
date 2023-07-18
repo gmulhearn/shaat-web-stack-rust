@@ -97,7 +97,7 @@ async fn main() -> std::io::Result<()> {
                     .service(create_todo_submit),
             )
     })
-    .bind(("127.0.0.1", 3000))?
+    .bind(("0.0.0.0", 3000))?
     .run()
     .await
 }

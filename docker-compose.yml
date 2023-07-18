@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: demodb
+    ports: 
+      - "5432:5432"
+  web:
+    build: .
+    restart: always
+    depends_on:
+      - db
+    environment:
+      JWT_SECRET: supersecretjwt
+      HASH_SECRET: supersecrethash
+      DATABASE_URL: postgres://postgres:mysecretpassword@db:5432/demodb
+    ports:
+      - "3000:3000"
