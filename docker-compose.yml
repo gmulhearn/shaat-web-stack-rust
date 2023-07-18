@@ -13,8 +13,8 @@ services:
     depends_on:
       - db
     environment:
-      JWT_SECRET: supersecretjwt
-      HASH_SECRET: supersecrethash
+      JWT_SECRET: ${JWT_SECRET}
+      HASH_SECRET: ${HASH_SECRET}
       DATABASE_URL: postgres://postgres:mysecretpassword@db:5432/demodb
     ports:
       - "3000:3000"

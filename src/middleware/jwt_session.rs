@@ -21,6 +21,7 @@ use actix_web::{
     web::Data,
     Error, HttpMessage, HttpResponse,
 };
+use chrono::Utc;
 use futures_util::future::LocalBoxFuture;
 use jwt::VerifyWithKey;
 
@@ -88,6 +89,10 @@ where
                 Ok(claims) => claims,
                 Err(_) => return redirect_to_login_middleware_response(req),
             };
+
+            if claims.expiration < Utc::now() {
+                return redirect_to_login_middleware_response(req);
+            }
 
             let app_state = req
                 .app_data::<Data<AppState>>()

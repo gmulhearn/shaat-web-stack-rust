@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use argonautica::{Hasher, Verifier};
 use async_trait::async_trait;
+use chrono::Utc;
 use jwt::SignWithKey;
 
 use crate::{
@@ -73,7 +74,16 @@ impl AuthService for DbAuthService {
             return Err(AuthServiceError::IncorrectPassword);
         }
 
-        let claims = TokenClaims { id: user.id };
+        let issued = Utc::now();
+        let expiration = Utc::now()
+            .checked_add_signed(chrono::Duration::minutes(1))
+            .expect("valid timestamp");
+
+        let claims = TokenClaims {
+            id: user.id,
+            expiration,
+            issued,
+        };
         let jwt_secret = get_jwt_signing_key();
         let access_token = claims.sign_with_key(&jwt_secret).unwrap();
 

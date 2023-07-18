@@ -8,6 +8,7 @@ use std::{env, sync::Arc};
 
 use actix_files::Files;
 
+use chrono::{DateTime, Utc};
 use middleware::jwt_session::JwtSession;
 use repositories::{
     in_memory_todo_repository::InMemoryTodoRepository,
@@ -66,7 +67,8 @@ impl Default for AppState {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct TokenClaims {
     id: String,
-    // TODO - issued, expiry, etc
+    issued: DateTime<Utc>,
+    expiration: DateTime<Utc>,
 }
 
 #[actix_web::main]
