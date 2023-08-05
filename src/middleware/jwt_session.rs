@@ -101,7 +101,7 @@ where
                 .user_repository
                 .get_user_by_id(&claims.id)
                 .await
-                .unwrap();
+                .expect("Fatal: failed to contact database");
 
             let user = match user {
                 Some(val) => val,

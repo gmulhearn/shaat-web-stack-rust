@@ -41,7 +41,7 @@ impl TodoRepository for SqlTodoRepository {
             false
         );
 
-        query.execute(&self.pool).await.unwrap();
+        query.execute(&self.pool).await?;
 
         Ok(id)
     }
@@ -49,7 +49,7 @@ impl TodoRepository for SqlTodoRepository {
     async fn list_todos(&self, user_id: &str) -> RepositoryResult<Vec<TodoEntity>> {
         let query = sqlx::query_as!(TodoRow, "SELECT * FROM Todos WHERE user_id=$1", user_id);
 
-        let users = query.fetch_all(&self.pool).await.unwrap();
+        let users = query.fetch_all(&self.pool).await?;
 
         Ok(users.into_iter().map(From::from).collect())
     }

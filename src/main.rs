@@ -76,9 +76,14 @@ async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
 
     let pg_url = env::var("DATABASE_URL").expect("DATABASE_URL must be in env");
-    let pool: Pool<Postgres> = sqlx::postgres::PgPool::connect(&pg_url).await.unwrap();
+    let pool: Pool<Postgres> = sqlx::postgres::PgPool::connect(&pg_url)
+        .await
+        .expect("Failed to initialize postgres database");
 
-    sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("Failed to execute migrations");
 
     let app_state = web::Data::new(AppState::new_with_pool(pool));
 

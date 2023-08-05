@@ -30,7 +30,7 @@ impl UserRepository for SqlUserRepository {
     async fn get_user_by_id(&self, id: &str) -> RepositoryResult<Option<UserEntity>> {
         let query = sqlx::query_as!(UserRow, "SELECT * FROM Users WHERE id=$1", id);
 
-        let user = query.fetch_optional(&self.pool).await.unwrap();
+        let user = query.fetch_optional(&self.pool).await?;
 
         Ok(user.map(From::from))
     }
@@ -38,7 +38,7 @@ impl UserRepository for SqlUserRepository {
     async fn get_user_by_username(&self, username: &str) -> RepositoryResult<Option<UserEntity>> {
         let query = sqlx::query_as!(UserRow, "SELECT * FROM Users WHERE username=$1", username);
 
-        let user = query.fetch_optional(&self.pool).await.unwrap();
+        let user = query.fetch_optional(&self.pool).await?;
 
         Ok(user.map(From::from))
     }
@@ -54,7 +54,7 @@ impl UserRepository for SqlUserRepository {
             pw_hash
         );
 
-        query.execute(&self.pool).await.unwrap();
+        query.execute(&self.pool).await?;
 
         Ok(id)
     }

@@ -16,7 +16,7 @@ RUN cargo install --path .
 
 FROM gcr.io/distroless/cc-debian11
 
-COPY --from=build /usr/local/cargo/bin/actix-html-templates /usr/local/bin/web-service
+COPY --from=build /usr/local/cargo/bin/shaat-stack-demo /usr/local/bin/web-service
 COPY templates templates
 COPY migrations migrations
 COPY static static

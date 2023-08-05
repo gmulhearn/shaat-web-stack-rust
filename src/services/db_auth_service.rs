@@ -6,7 +6,7 @@ use chrono::Utc;
 use jwt::SignWithKey;
 
 use crate::{
-    repositories::user_repository::UserRepository,
+    repositories::{user_repository::UserRepository, RepositoryError},
     utils::global_auth::{get_jwt_signing_key, get_password_hash_secret, JWT_AUTH_EXPIRATION_MINS},
     TokenClaims,
 };
@@ -26,12 +26,10 @@ impl DbAuthService {
 #[async_trait]
 impl AuthService for DbAuthService {
     async fn register_user(&self, username: &str, password: &str) -> AuthServiceResult<()> {
-        // TODO - no unwrap!
         let user_exists = self
             .user_repository
             .get_user_by_username(username)
-            .await
-            .unwrap()
+            .await?
             .is_some();
         if user_exists {
             return Err(AuthServiceError::UserAlreadyExists);
@@ -43,12 +41,9 @@ impl AuthService for DbAuthService {
             .with_password(password)
             .with_secret_key(hash_secret)
             .hash()
-            .unwrap();
+            .map_err_unknown()?;
 
-        self.user_repository
-            .create_user(username, &hash)
-            .await
-            .unwrap();
+        self.user_repository.create_user(username, &hash).await?;
 
         Ok(())
     }
@@ -57,8 +52,7 @@ impl AuthService for DbAuthService {
         let user = self
             .user_repository
             .get_user_by_username(username)
-            .await
-            .unwrap()
+            .await?
             .ok_or(AuthServiceError::UserDoesNotExists)?;
 
         let hash_secret = get_password_hash_secret();
@@ -68,7 +62,7 @@ impl AuthService for DbAuthService {
             .with_password(password)
             .with_secret_key(hash_secret)
             .verify()
-            .unwrap();
+            .map_err_unknown()?;
 
         if !is_valid {
             return Err(AuthServiceError::IncorrectPassword);
@@ -85,8 +79,34 @@ impl AuthService for DbAuthService {
             issued,
         };
         let jwt_secret = get_jwt_signing_key();
-        let access_token = claims.sign_with_key(&jwt_secret).unwrap();
+        let access_token = claims.sign_with_key(&jwt_secret).map_err_unknown()?;
 
         Ok(access_token)
+    }
+}
+
+impl From<RepositoryError> for AuthServiceError {
+    fn from(value: RepositoryError) -> Self {
+        match value {
+            RepositoryError::ItemAlreadyExists => AuthServiceError::UserAlreadyExists,
+            RepositoryError::UnknownError { info } => AuthServiceError::Unknown { info },
+            RepositoryError::ItemNotFound => AuthServiceError::UserDoesNotExists,
+            RepositoryError::DatabaseConnectionError { info } => AuthServiceError::Unknown { info },
+        }
+    }
+}
+
+trait MapUnknown {
+    type MappedRes;
+    fn map_err_unknown(self) -> Self::MappedRes;
+}
+
+impl<T, E: std::fmt::Display> MapUnknown for Result<T, E> {
+    type MappedRes = Result<T, AuthServiceError>;
+
+    fn map_err_unknown(self) -> Self::MappedRes {
+        self.map_err(|e| AuthServiceError::Unknown {
+            info: Some(e.to_string()),
+        })
     }
 }

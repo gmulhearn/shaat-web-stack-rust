@@ -1,5 +1,5 @@
-# Rust HTML Templates Web Service (Actix + Askama + tailwind)
-A web service without any client-side JavaScript, but with all the DX of Rust and Tailwind! 🦀
+# SHAAT Stack (SQL, HTML, Actix, Askama, Tailwind) 
+A web service without _any_ client-side JavaScript, taking it back to the good ol' days of HTML templates, but with all the typesafety of Rust and DX Tailwind! 🦀
 
 # Running
 ## Local
@@ -13,7 +13,7 @@ This script also requires the sqlx cli to be installed to run the migrations on 
 
 With the backend running `./scripts/frontend_dev.sh` can be used to build the tailwind and begin the actix server. The web service should now be viewable on `localhost:3000`.
 
+Note that due to the rust webservice utilizing sqlx macros, it will not compile unless `DATABASE_URL` is defined in the env, and the database is running and migrated (i.e. as done by executing `./scripts/backend_dev.sh`).
+
 ## Containerized
 Docker compose can also be used to deploy the full stack by running `docker compose up`. Note that the `.env` file is still required for this, where secrets for JWT and Hash should be placed.
-
-TODO - continue

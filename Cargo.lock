@@ -43,30 +43,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "actix-html-templates"
-version = "0.1.0"
-dependencies = [
- "actix-files",
- "actix-web",
- "actix-web-httpauth",
- "argonautica",
- "askama",
- "async-trait",
- "chrono",
- "dotenv",
- "futures-util",
- "hmac",
- "jwt",
- "serde",
- "serde_json",
- "sha2",
- "sqlx",
- "thiserror",
- "tokio",
- "uuid",
-]
-
-[[package]]
 name = "actix-http"
 version = "3.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2225,6 +2201,30 @@ dependencies = [
  "cfg-if 1.0.0",
  "cpufeatures",
  "digest",
+]
+
+[[package]]
+name = "shaat-stack-demo"
+version = "0.1.0"
+dependencies = [
+ "actix-files",
+ "actix-web",
+ "actix-web-httpauth",
+ "argonautica",
+ "askama",
+ "async-trait",
+ "chrono",
+ "dotenv",
+ "futures-util",
+ "hmac",
+ "jwt",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]
