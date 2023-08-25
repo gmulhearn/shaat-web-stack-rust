@@ -1,5 +1,5 @@
 # SHAAT Stack (SQL, HTML, Actix, Askama, Tailwind) 
-A web service without _any_ client-side JavaScript, taking it back to the good ol' days of HTML templates, but with all the typesafety of Rust and DX Tailwind! 🦀
+A web service without _any_ client-side JavaScript, taking it back to the good ol' days of HTML templates, but with all the typesafety of Rust (and prettiness of Tailwind)! 🦀
 
 # Running
 ## Local
